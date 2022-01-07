@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <head lang="en">
+  <meta charset="utf-8">
+  <title>Pivot</title>
+  <script src="../codebase/jquery.js" type="text/javascript"></script>
+  <script src="../codebase/dhtmlx.js" type="text/javascript"></script>
+  <script src="../codebase/pivot.min.js" type="text/javascript"></script>
+  <link rel="STYLESHEET" type="text/css" href="../codebase/dhtmlx.css"/>
+  <link rel="STYLESHEET" type="text/css" href="../codebase/pivot.min.css"/>
+  <style>
+	.dhx_grid_hcoll{
+		color: #000000!important;
+		font-weight: bold!important;
+	}
+	.dhx_span_cell{
+		color: #000000!important;
+		font-weight: bold!important;
+	}
+	.dhx_grid_col--title{
+		color: #000000!important;
+		font-weight: bold!important;
+	}
+	.max_cell {
+      background: #c3eecc;
+      color: #113c19
+    }
+
+    .min_cell {
+      background: #ff99a3;
+      color: #4d0008
+    }
+	.main_wrapper {
+		display: flex;
+		height: 100%;
+		width:100%;
+	}
+
+	.container {
+		flex: 2 0 auto;
+		width: 100%;
+	}
+
+<!--
+	.btn_cont {
+		width: 200px;
+		max-width: 200px;
+		display: flex;
+		background: #EEE;
+	}
+-->
+
+	.btn_cont .dhx_btn {
+		margin: 15px 0;
+		min-height: 38px;
+		justify-content: center;
+	}
+
+	.dhx_inline_cont{
+		display: inline-block;
+		box-sizing: border-box;
+		vertical-align: top;
+	}
+
+	.item_content {
+		padding: 0 6px!important;
+	}
+
+	.dhx_config_item {
+		margin: 4px 4px!important;
+		font-size: 14px!important;
+		height: 30px!important;
+	}
+
+	.dhx_config_select {
+		padding: 6px 6px!important;
+	}
+
+	.dhx_span_cell {
+		padding: 2px 11px!important;
+	}
+
+	.dhx_config .dhx_config_free-items {
+		padding: 2px 20px 2px 2px!important;
+	}
+
+	.dhx_config_wrap {
+		margin-bottom: 5px!important;
+	}
+
+	.dhx_pivot_layout {
+		padding: 0px!important;
+	}
+
+	.dhx_pivot_cont {
+		padding: 5px!important;
+	}
+
+	.dhx_config_field {
+		height: 40px;
+	}
+
+	.dhx_field_header{
+		padding-top: 0px!important;
+		padding-bottom: 0px!important;
+	}
+
+	.dhx_pivot_cont .dhx_flex_cont {
+		margin: 0 0 5px 0!important;
+	}
+
+	.dhx_rows_wrap {
+		margin-right: 5px!important;
+	}
+
+	.dhx_pivot_settings_wrap {
+	    padding: 5px 5px 0!important;
+	}
+
+	.dhx_pivot_alone_wrap {
+		padding: 5px!important;
+	}
+  </style>
+	<script>
+  var data;
+	var id;
+	var pivot;
+	var names = [];
+  var idx;
+  var fields;
+	function doOnLoad() {
+    var query = location.search.substr(1);
+    var result = {};
+    query.split("&").forEach(function(part) {
+      var item = part.split("=");
+      result[item[0]] = decodeURIComponent(item[1]);
+    });
+		if (result.dataset) {
+	      result.dataset = JSON.parse(result.dataset);
+	      data = result.dataset;
+				id = result.id;
+				id = id.split(",");
+				var name = {};
+				for (i = 0; i < id.length; i++) {
+					name.id = id[i];
+					name.label = id[i];
+					//name.template = function (text, obj) { return '<span class="headersCustomClass">' + text + '</span>' };
+					names.push(name);
+					name = {};
+				}
+        idx = result.idx;
+        fields = result.fields;
+        $(document).mouseup(function() {
+          setTimeout(function() {
+            var fields = pivot.getFields();
+            fields.id = idx;
+            window.parent.postMessage(fields, "*");
+          }, 100);
+        })
+	      createTableLocal();
+			} else {
+        idx = result.idx
+        fields = result.fields
+        console.log(idx);
+				createTableServer();
+			}
+	}
+
+	function createTableLocal(dataset, nameset) {
+    if (dataset) {
+      data = dataset;
+      names = [];
+      fields = "null";
+      var name = {};
+      for (i = 0; i < nameset.length; i++) {
+        name.id = nameset[i];
+        name.label = nameset[i];
+        //name.template = function (text, obj) { return '<span class="headersCustomClass">' + text + '</span>' };
+        names.push(name);
+        name = {};
+      }
+    }
+    if (fields != "null") {
+      pivot = new dhx.Pivot("cont", {
+        data: data,
+        fields: JSON.parse(fields),
+        fieldList: names,
+        layout: {
+          rowsHeadersWidth: "auto",
+          fieldsCloseBtn: true
+        },
+        mark: {
+          min: "min_cell",
+          max: "max_cell"
+        }
+      });
+	  pivot.custFontFam = '"Roboto", sans-serif';
+	  pivot.custFontStyle = 'normal';
+	  pivot.custFontSize = '14';
+	  pivot.setFont();
+      return;
+    }
+		pivot = new dhx.Pivot("cont", {
+			data: data,
+			fields: {
+				rows:[],
+				columns:[],
+				values:[],
+			},
+			fieldList: names,
+			layout: {
+				rowsHeadersWidth: "auto",
+				fieldsCloseBtn: true
+			},
+			mark: {
+				min: "min_cell",
+				max: "max_cell"
+			}
+		});
+		pivot.custFontFam = '"Roboto", sans-serif';
+		pivot.custFontStyle = 'normal';
+		pivot.custFontSize = '14';
+		pivot.setFont();
+	}
+
+  function createTableServer() {
+    console.log(parent.table[idx].dataset);
+    console.log(parent.table[idx].names);
+    if (fields != "null" && !(jQuery.isEmptyObject(fields))) {
+      pivot = new dhx.Pivot("cont", {
+        data: parent.table[idx].dataset,
+				fields: JSON.parse(fields),
+        fieldList: parent.table[idx].names,
+    		layout: {
+    			rowsHeadersWidth: "auto",
+    			fieldsCloseBtn: true
+    			},
+    		mark: {
+    			min: "min_cell",
+    			max: "max_cell"
+    		}
+      });
+      parent.table[idx].fields = pivot.getFields();
+      parent.table[idx].pivot = pivot;
+      $(document).mouseup(function() {
+        setTimeout(function() {
+          parent.table[idx].fields = pivot.getFields();
+          parent.table[idx].pivot = pivot;
+        }, 100);
+      });
+      return;
+    }
+    pivot = new dhx.Pivot("cont", {
+      data: parent.table[idx].dataset,
+			fields: {
+				rows:[],
+				columns:[],
+				values:[],
+			},
+      fieldList: parent.table[idx].names,
+  		layout: {
+  			rowsHeadersWidth: "auto",
+  			fieldsCloseBtn: true
+  			},
+  		mark: {
+  			min: "min_cell",
+  			max: "max_cell"
+  		}
+    });
+    parent.table[idx].fields = pivot.getFields();
+    parent.table[idx].pivot = pivot;
+    $(document).mouseup(function() {
+      setTimeout(function() {
+        parent.table[idx].fields = pivot.getFields();
+        parent.table[idx].pivot = pivot;
+      }, 100);
+    });
+  }
+
+	// function runExport() {
+	// 	pivot.export({
+	// 		url: "//export.dhtmlx.com/excel"
+	// 	});
+	// };
+
+  window.addEventListener("message", savePivotLocal, false);
+
+  function updateFonts(fam,style,size) {
+    if (pivot) {
+      console.log(fam);
+      console.log(style);
+      console.log(size);
+      pivot.custFontFam = fam;
+      pivot.custFontStyle = style;
+      pivot.custFontSize = size;
+      pivot.setFont();
+      console.log(pivot);
+    } else updateFonts(fam,style,size)
+  }
+
+  function savePivotLocal(event) {
+    createTableLocal(event.data.dataset, event.data.nameset);
+  }
+
+  function savePivotServer(dataset, nameset, fam, style, size, id) {
+    names = [];
+    var name = {};
+    for (i = 0; i < nameset.length; i++) {
+      name.id = nameset[i];
+      name.label = nameset[i];
+      //name.template = function (text, obj) { return '<span class="headersCustomClass">' + text + '</span>' };
+      names.push(name);
+      name = {};
+    }
+    pivot = new dhx.Pivot("cont", {
+      data: dataset,
+      fields: {
+        rows:[],
+        columns:[],
+        values:[],
+      },
+      fieldList: names,
+      layout: {
+        rowsHeadersWidth: "auto",
+        fieldsCloseBtn: true
+        },
+      mark: {
+        min: "min_cell",
+        max: "max_cell"
+      }
+    });
+	pivot.custFontFam = fam;
+	pivot.custFontStyle = style;
+	pivot.custFontSize = size;
+	pivot.setFont();
+    parent.table[id].fields = pivot.getFields();
+    parent.table[id].pivot = pivot;
+    $(document).mouseup(function() {
+      setTimeout(function() {
+        parent.table[id].fields = pivot.getFields();
+        parent.table[id].pivot = pivot;
+      }, 100);
+    });
+  }
+	</script>
+</head>
+<body onload="doOnLoad()">
+	<div class="main_wrapper">
+		<div class="container" id="cont"></div>
+		<!-- <div class="btn_cont">
+			<button class="dhx_btn" onclick="runExport()">Export</button>
+		</div> -->
+	</div>
+</body>
+</html>
